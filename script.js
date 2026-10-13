@@ -7,10 +7,10 @@ const sendBtn = document.getElementById("sendBtn");
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
-  authDomain: "jarvis-connect-816ce.firebaseapp.com",
-  databaseURL: "https://jarvis-connect-816ce-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jarvis-connect-816ce",
-  storageBucket: "jarvis-connect-816ce.firebasestorage.app",
+  authDomain: "PROJECT_AUTHDOMAIN",
+  databaseURL: "PROJECT_URL",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_STORAGE_BUCKET",
   messagingSenderId: "336780686395",
   appId: "1:336780686395:web:65674db992e749a4e1181e"
 };
