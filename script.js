@@ -6,7 +6,7 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD25rG6WGZpYyiuT24ycHIcUCCepemvnPI",
+  apiKey: "YOUR_API_KEY",
   authDomain: "jarvis-connect-816ce.firebaseapp.com",
   databaseURL: "https://jarvis-connect-816ce-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "jarvis-connect-816ce",
