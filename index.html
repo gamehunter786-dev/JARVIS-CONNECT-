@@ -1,41 +1,75 @@
-<!doctypehtml>
-<head>
-<link rel="stylesheet" href="style.css">
-<script type="module" src="script.js"></script>
-</head>
-<body>
+
 <div class="app">
   <header>
     <div class="logo">J</div>
     <div class="brand">
       <h1>J.A.R.V.I.S.</h1>
-      <p>CONNECT • GLOBAL CHAT
-Created by Hussain (Game Hunter)</p>
+      <p>CONNECT • GLOBAL CHAT</p>
     </div>
-    <span id="status">Connecting...</span>
+    <span id="status">Starting...</span>
   </header>
+
+  <section id="authPanel" class="auth-panel">
+    <h2 id="authTitle">Welcome, Agent</h2>
+    <p id="authSubtitle">Sign in or create your account.</p>
+
+    <div class="auth-tabs">
+      <button id="loginTab" class="tab active" type="button">Login</button>
+      <button id="registerTab" class="tab" type="button">Register</button>
+    </div>
+
+    <form id="authForm">
+      <div id="usernameGroup" hidden>
+        <label for="usernameInput">Username</label>
+        <input id="usernameInput" type="text"
+          placeholder="Agent_Hussain"
+          minlength="3" maxlength="20"
+          autocomplete="username">
+      </div>
+
+      <label for="emailInput">Email</label>
+      <input id="emailInput" type="email"
+        placeholder="you@example.com"
+        autocomplete="email" required>
+
+      <label for="passwordInput">Password</label>
+      <input id="passwordInput" type="password"
+        placeholder="At least 6 characters"
+        minlength="6" autocomplete="current-password" required>
+
+      <button id="authSubmit" class="primary-btn" type="submit">
+        Sign In
+      </button>
+
+      <p id="authError" class="auth-error" role="alert"></p>
+    </form>
+  </section>
+
+  <section id="profilePanel" class="profile-panel" hidden>
+    <div>
+      <p class="profile-label">SIGNED IN AS</p>
+      <h2 id="profileUsername">Agent</h2>
+      <p id="profileEmail" class="profile-email"></p>
+    </div>
+    <button id="logoutBtn" class="logout-btn" type="button">
+      Log Out
+    </button>
+  </section>
 
   <main id="messages" aria-live="polite">
     <div class="welcome">
       <div class="welcome-icon">✦</div>
       <h2>Welcome, Agent!</h2>
-      <p>Connect and start a conversation.</p>
+      <p>Sign in to connect to the network.</p>
     </div>
   </main>
 
-  <form id="chatForm">
-    <input
-      id="messageInput"
-      type="text"
+  <form id="chatForm" hidden>
+    <input id="messageInput" type="text"
       placeholder="Type your message..."
-      maxlength="500"
-      autocomplete="off"
-      required
-    >
+      maxlength="500" autocomplete="off" required>
     <button id="sendBtn" type="submit" disabled>➤</button>
   </form>
 
   <footer>J.A.R.V.I.S. CONNECT © 2026</footer>
 </div>
-</body>
-</html>
