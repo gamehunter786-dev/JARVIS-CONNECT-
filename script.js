@@ -1,31 +1,148 @@
 
-const statusText = document.getElementById("status");
-const messages = document.getElementById("messages");
-const chatForm = document.getElementById("chatForm");
-const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "PROJECT_AUTHDOMAIN",
-  databaseURL: "PROJECT_URL",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_STORAGE_BUCKET",
+  apiKey: "AIzaSyD25rG6WGZpYyiuT24ycHIcUCCepemvnPI",
+  authDomain: "jarvis-connect-816ce.firebaseapp.com",
+  databaseURL: "https://jarvis-connect-816ce-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jarvis-connect-816ce",
+  storageBucket: "jarvis-connect-816ce.firebasestorage.app",
   messagingSenderId: "336780686395",
   appId: "1:336780686395:web:65674db992e749a4e1181e"
 };
 
-let sending = false;
+const $ = id => document.getElementById(id);
 
-function showMessage(data, currentUser) {
-  if (!data) return;
+const statusText = $("status");
+const authPanel = $("authPanel");
+const profilePanel = $("profilePanel");
+const authForm = $("authForm");
+const authTitle = $("authTitle");
+const authSubtitle = $("authSubtitle");
+const authError = $("authError");
+const usernameGroup = $("usernameGroup");
+const usernameInput = $("usernameInput");
+const emailInput = $("emailInput");
+const passwordInput = $("passwordInput");
+const authSubmit = $("authSubmit");
+const loginTab = $("loginTab");
+const registerTab = $("registerTab");
+const profileUsername = $("profileUsername");
+const profileEmail = $("profileEmail");
+const logoutBtn = $("logoutBtn");
+const messages = $("messages");
+const chatForm = $("chatForm");
+const messageInput = $("messageInput");
+const sendBtn = $("sendBtn");
+
+let auth;
+let db;
+let authApi;
+let dbApi;
+let currentUser = null;
+let currentUsername = "";
+let mode = "login";
+let busy = false;
+let registering = false;
+let sending = false;
+let stopMessages = null;
+let sessionVersion = 0;
+
+function explainError(error) {
+  const messages = {
+    "auth/email-already-in-use":
+      "This email is already registered. Please log in.",
+    "auth/invalid-email":
+      "Enter a valid email address.",
+    "auth/weak-password":
+      "Your password must contain at least 6 characters.",
+    "auth/invalid-credential":
+      "Incorrect email or password.",
+    "auth/user-not-found":
+      "Account not found. Please register first.",
+    "auth/wrong-password":
+      "Incorrect email or password.",
+    "auth/too-many-requests":
+      "Too many attempts. Try again later.",
+    "auth/network-request-failed":
+      "Network error. Check your internet connection.",
+    "auth/operation-not-allowed":
+      "Enable Email/Password in Firebase Authentication.",
+    "auth/unauthorized-domain":
+      "Add your CodePen preview domain to Firebase Authorized Domains.",
+    "auth/internal-error":
+      "Firebase Authentication failed in this preview. Check Console and Authorized Domains.",
+    "PERMISSION_DENIED":
+      "Database access denied. Check your Firebase Realtime Database Rules."
+  };
+
+  return messages[error.code] ||
+    error.message ||
+    "An unexpected error occurred.";
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  const isRegister = mode === "register";
+
+  authTitle.textContent = isRegister
+    ? "Create Your Account"
+    : "Welcome, Agent";
+
+  authSubtitle.textContent = isRegister
+    ? "Choose your unique agent username."
+    : "Sign in to connect to the network.";
+
+  authSubmit.textContent = isRegister
+    ? "Create Account"
+    : "Sign In";
+
+  usernameGroup.hidden = !isRegister;
+  usernameInput.required = isRegister;
+
+  passwordInput.autocomplete = isRegister
+    ? "new-password"
+    : "current-password";
+
+  loginTab.classList.toggle("active", !isRegister);
+  registerTab.classList.toggle("active", isRegister);
+  authError.textContent = "";
+}
+
+loginTab.addEventListener("click", () => setMode("login"));
+registerTab.addEventListener("click", () => setMode("register"));
+
+function showWelcome(title, subtitle) {
+  messages.replaceChildren();
+
+  const box = document.createElement("div");
+  box.className = "welcome";
+
+  const icon = document.createElement("div");
+  icon.className = "welcome-icon";
+  icon.textContent = "✦";
+
+  const heading = document.createElement("h2");
+  heading.textContent = title;
+
+  const paragraph = document.createElement("p");
+  paragraph.textContent = subtitle;
+
+  box.append(icon, heading, paragraph);
+  messages.appendChild(box);
+}
+
+function showMessage(data, user, version) {
+  if (
+    !data ||
+    version !== sessionVersion ||
+    currentUser?.uid !== user.uid
+  ) return;
 
   messages.querySelector(".welcome")?.remove();
 
   const bubble = document.createElement("div");
   bubble.className = "message";
 
-  if (data.uid === currentUser.uid) {
+  if (data.uid === user.uid) {
     bubble.classList.add("sent");
   }
 
@@ -33,13 +150,12 @@ function showMessage(data, currentUser) {
   name.className = "name";
   name.textContent = data.name || "Agent";
 
-  const text = document.createElement("div");
-  text.className = "text";
-  text.textContent = data.text || "";
+  const body = document.createElement("div");
+  body.className = "text";
+  body.textContent = data.text || "";
 
   const time = document.createElement("span");
   time.className = "time";
-
   time.textContent = data.createdAt
     ? new Date(data.createdAt).toLocaleTimeString([], {
         hour: "2-digit",
@@ -47,97 +163,326 @@ function showMessage(data, currentUser) {
       })
     : "Just now";
 
-  bubble.append(name, text, time);
+  bubble.append(name, body, time);
   messages.appendChild(bubble);
   messages.scrollTop = messages.scrollHeight;
 }
 
-async function startChat() {
+function stopChat() {
+  sessionVersion++;
+
+  if (stopMessages) stopMessages();
+  stopMessages = null;
+
+  currentUser = null;
+  currentUsername = "";
+
+  profilePanel.hidden = true;
+  chatForm.hidden = true;
+  sendBtn.disabled = true;
+
+  showWelcome("Welcome, Agent!", "Sign in to connect to the network.");
+}
+
+async function openChat(user, username) {
+  if (auth.currentUser?.uid !== user.uid) return;
+
+  if (stopMessages) stopMessages();
+  stopMessages = null;
+
+  const version = ++sessionVersion;
+
+  currentUser = user;
+  currentUsername = username;
+
+  authPanel.hidden = true;
+  profilePanel.hidden = false;
+  chatForm.hidden = false;
+
+  profileUsername.textContent = username;
+  profileEmail.textContent = user.email || "";
+
+  showWelcome("Welcome, " + username + "!", "Loading messages...");
+  statusText.textContent = "ONLINE";
+  authError.textContent = "";
+
   try {
-    statusText.textContent = "Loading Firebase...";
-
-    const { initializeApp } = await import(
-      "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js"
+    const messagesRef = dbApi.ref(db, "messages");
+    const recentMessages = dbApi.query(
+      messagesRef,
+      dbApi.limitToLast(100)
     );
 
-    const { getAuth, signInAnonymously } = await import(
-      "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js"
-    );
-
-    const {
-      getDatabase,
-      ref,
-      push,
-      onChildAdded,
-      query,
-      limitToLast,
-      serverTimestamp
-    } = await import(
-      "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js"
-    );
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    statusText.textContent = "Signing in...";
-
-    const result = await signInAnonymously(auth);
-    const currentUser = result.user;
-
-    const displayName =
-      (prompt("Enter your agent name:") || "Agent")
-        .trim().slice(0, 30) || "Agent";
-
-    const messagesRef = ref(db, "messages");
-
-    onChildAdded(
-      query(messagesRef, limitToLast(100)),
-      snapshot => showMessage(snapshot.val(), currentUser),
+    stopMessages = dbApi.onChildAdded(
+      recentMessages,
+      snapshot => showMessage(snapshot.val(), user, version),
       error => {
-        console.error("Read error:", error);
+        if (version !== sessionVersion) return;
+        console.error("Message read error:", error);
         statusText.textContent = "Database error";
+        authError.textContent = explainError(error);
       }
     );
 
-    statusText.textContent = "ONLINE";
     sendBtn.disabled = false;
-
-    chatForm.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const message = messageInput.value.trim();
-
-      if (!message || sending) return;
-
-      sending = true;
-      sendBtn.disabled = true;
-
-      try {
-        await push(messagesRef, {
-          uid: currentUser.uid,
-          name: displayName,
-          text: message,
-          createdAt: serverTimestamp()
-        });
-
-        messageInput.value = "";
-        statusText.textContent = "ONLINE";
-      } catch (error) {
-        console.error("Send error:", error);
-        statusText.textContent = "Send failed";
-        alert("Message could not be sent: " + error.message);
-      } finally {
-        sending = false;
-        sendBtn.disabled = false;
-      }
-    });
-
   } catch (error) {
-    console.error("Firebase startup error:", error);
-    statusText.textContent = "Connection failed";
-    alert("Firebase error: " + error.message);
+    console.error("Chat startup error:", error);
+    statusText.textContent = "Chat unavailable";
+    authError.textContent = explainError(error);
   }
 }
 
-startChat();
+async function loadProfile(user) {
+  const snapshot = await dbApi.get(
+    dbApi.ref(db, "users/" + user.uid)
+  );
+
+  if (auth.currentUser?.uid !== user.uid) return;
+
+  if (!snapshot.exists() || !snapshot.val()?.username) {
+    throw new Error(
+      "No saved username was found for this account. Register a new account or restore the missing Firebase profile."
+    );
+  }
+
+  await openChat(user, snapshot.val().username);
+}
+
+async function registerAccount(email, password, username) {
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+    throw new Error(
+      "Username must be 3–20 characters using letters, numbers, or underscores."
+    );
+  }
+
+  const usernameKey = username.toLowerCase();
+
+  const credential = await authApi.createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+
+  const user = credential.user;
+  const usernameRef = dbApi.ref(
+    db,
+    "usernames/" + usernameKey
+  );
+
+  let usernameReserved = false;
+
+  try {
+    const result = await dbApi.runTransaction(
+      usernameRef,
+      existingUid => existingUid === null
+        ? user.uid
+        : undefined,
+      { applyLocally: false }
+    );
+
+    if (!result.committed) {
+      throw new Error(
+        "That username is already taken. Choose another username."
+      );
+    }
+
+    usernameReserved = true;
+
+    await dbApi.set(
+      dbApi.ref(db, "users/" + user.uid),
+      {
+        uid: user.uid,
+        username: username,
+        usernameLower: usernameKey,
+        createdAt: dbApi.serverTimestamp()
+      }
+    );
+
+    await openChat(user, username);
+    authForm.reset();
+  } catch (error) {
+    console.error("Registration save error:", error);
+
+    if (usernameReserved) {
+      await dbApi.set(usernameRef, null).catch(console.error);
+    }
+
+    await user.delete().catch(console.error);
+    throw error;
+  }
+}
+
+authForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (busy || !auth || !db) {
+    authError.textContent = "Firebase is not ready yet. Please wait.";
+    return;
+  }
+
+  busy = true;
+  authSubmit.disabled = true;
+  loginTab.disabled = true;
+  registerTab.disabled = true;
+  authError.textContent = "";
+
+  try {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (mode === "register") {
+      registering = true;
+      statusText.textContent = "Creating account...";
+
+      await registerAccount(
+        email,
+        password,
+        usernameInput.value.trim()
+      );
+
+      statusText.textContent = "ONLINE";
+    } else {
+      statusText.textContent = "Signing in...";
+
+      const result = await authApi.signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      await loadProfile(result.user);
+    }
+  } catch (error) {
+    console.error("Account error:", error);
+    authError.textContent = explainError(error);
+    statusText.textContent = "Action failed";
+  } finally {
+    registering = false;
+    busy = false;
+    authSubmit.disabled = false;
+    loginTab.disabled = false;
+    registerTab.disabled = false;
+  }
+});
+
+chatForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const user = currentUser;
+  const username = currentUsername;
+  const message = messageInput.value.trim();
+
+  if (!user || !message || sending) return;
+
+  sending = true;
+  sendBtn.disabled = true;
+
+  try {
+    await dbApi.push(dbApi.ref(db, "messages"), {
+      uid: user.uid,
+      name: username,
+      text: message,
+      createdAt: dbApi.serverTimestamp()
+    });
+
+    messageInput.value = "";
+    statusText.textContent = "ONLINE";
+  } catch (error) {
+    console.error("Send error:", error);
+    statusText.textContent = "Send failed";
+    authError.textContent = explainError(error);
+  } finally {
+    sending = false;
+    sendBtn.disabled = !currentUser;
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  try {
+    if (stopMessages) stopMessages();
+    stopMessages = null;
+
+    stopChat();
+    authPanel.hidden = false;
+    authError.textContent = "";
+
+    await authApi.signOut(auth);
+
+    setMode("login");
+    statusText.textContent = "Logged out";
+  } catch (error) {
+    console.error("Logout error:", error);
+    statusText.textContent = "Logout failed";
+    authError.textContent = explainError(error);
+  }
+});
+
+async function startApp() {
+  try {
+    statusText.textContent = "Loading Firebase...";
+
+    const appApi = await import(
+      "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js"
+    );
+
+    authApi = await import(
+      "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js"
+    );
+
+    dbApi = await import(
+      "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js"
+    );
+
+    const app = appApi.initializeApp(firebaseConfig);
+
+    // CodePen preview workaround:
+    // Avoid browser storage that may be blocked in embedded previews.
+    auth = authApi.initializeAuth(app, {
+      persistence: authApi.inMemoryPersistence
+    });
+
+    db = dbApi.getDatabase(app);
+
+    statusText.textContent = "Firebase connected";
+
+    authApi.onAuthStateChanged(auth, async user => {
+      if (registering) return;
+
+      stopChat();
+      authError.textContent = "";
+
+      if (!user) {
+        authPanel.hidden = false;
+        statusText.textContent = "Please log in";
+        setMode("login");
+        return;
+      }
+
+      authPanel.hidden = true;
+      statusText.textContent = "Loading profile...";
+
+      try {
+        await loadProfile(user);
+      } catch (error) {
+        console.error("Profile loading error:", error);
+
+        if (auth.currentUser?.uid !== user.uid) return;
+
+        authPanel.hidden = false;
+        profilePanel.hidden = true;
+        chatForm.hidden = true;
+
+        statusText.textContent = "Profile error";
+        authError.textContent = explainError(error);
+      }
+    });
+  } catch (error) {
+    console.error("Firebase startup error:", error);
+    statusText.textContent = "Connection failed";
+    authPanel.hidden = false;
+    authError.textContent = explainError(error);
+  }
+}
+
+setMode("login");
+startApp();
