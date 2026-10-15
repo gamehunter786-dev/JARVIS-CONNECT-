@@ -1,83 +1,128 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J.A.R.V.I.S. Connect
+  BY HUSSAIN(GAME HUNTER)</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="logo">J</div>
-    <div class="brand">
-      <h1>J.A.R.V.I.S.</h1>
-      <p>CONNECT • GLOBAL CHAT
-BY HUSSAIN (GAME HUNTER)</p>
+
+  <!-- PIN LOCK SCREEN -->
+  <section id="lockScreen" class="lock-screen">
+    <div class="lock-card">
+      <div class="lock-icon">🔐</div>
+      <h1>J.A.R.V.I.S.
+      By Hussain</h1>
+      <p class="lock-subtitle">SECURE ACCESS SYSTEM</p>
+      <p>Enter your access key to continue</p>
+
+      <form id="pinForm">
+        <input
+          id="pinInput"
+          type="password"
+          placeholder="Enter access PIN"
+          autocomplete="off"
+          required
+        >
+        <button type="submit">UNLOCK SYSTEM</button>
+      </form>
+
+      <p id="pinError" class="error" role="alert"></p>
+      <div class="lock-footer">J.A.R.V.I.S. CONNECT</div>
     </div>
-    <span id="status">Starting...</span>
-  </header>
+  </section>
 
-  <section id="authPanel" class="auth-panel">
-    <h2 id="authTitle">Welcome, Agent</h2>
-    <p id="authSubtitle">Sign in or create your account.</p>
+  <!-- MAIN WEBSITE -->
+  <main id="appContent" hidden>
+    <header class="topbar">
+      <div>
+        <h1>J.A.R.V.I.S.</h1>
+        <p>CONNECT • GLOBAL CHAT</p>
+      </div>
+      <span id="status">Connecting...</span>
+    </header>
 
-    <div class="auth-tabs">
-      <button id="loginTab" class="tab active" type="button">Login</button>
-      <button id="registerTab" class="tab" type="button">Register</button>
-    </div>
+    <!-- LOGIN / REGISTER -->
+    <section id="authPanel" class="panel">
+      <h2 id="authTitle">Welcome Back</h2>
+      <p id="authSubtitle">Sign in to continue</p>
 
-    <form id="authForm">
-      <div id="usernameGroup" hidden>
-        <label for="usernameInput">Username</label>
-        <input id="usernameInput" type="text"
-          placeholder="Agent_Hussain"
-          minlength="3" maxlength="20"
-          autocomplete="username">
+      <div class="tabs">
+        <button id="loginTab" type="button" class="tab active">Login</button>
+        <button id="registerTab" type="button" class="tab">Register</button>
       </div>
 
-      <label for="emailInput">Email</label>
-      <input id="emailInput" type="email"
-        placeholder="you@example.com"
-        autocomplete="email" required>
+      <form id="authForm">
+        <div id="usernameGroup" hidden>
+          <label for="usernameInput">Username</label>
+          <input
+            id="usernameInput"
+            type="text"
+            placeholder="Choose a username"
+            maxlength="30"
+            autocomplete="username"
+          >
+        </div>
 
-      <label for="passwordInput">Password</label>
-      <input id="passwordInput" type="password"
-        placeholder="At least 6 characters"
-        minlength="6" autocomplete="current-password" required>
+        <label for="emailInput">Email</label>
+        <input
+          id="emailInput"
+          type="email"
+          placeholder="Enter your email"
+          autocomplete="email"
+          required
+        >
 
-      <button id="authSubmit" class="primary-btn" type="submit">
-        Sign In
-      </button>
+        <label for="passwordInput">Password</label>
+        <input
+          id="passwordInput"
+          type="password"
+          placeholder="Enter your password"
+          minlength="6"
+          autocomplete="current-password"
+          required
+        >
 
-      <p id="authError" class="auth-error" role="alert"></p>
-    </form>
-  </section>
+        <button id="authSubmit" type="submit">LOGIN</button>
+        <p id="authError" class="error" role="alert"></p>
+      </form>
+    </section>
 
-  <section id="profilePanel" class="profile-panel" hidden>
-    <div>
-      <p class="profile-label">SIGNED IN AS</p>
-      <h2 id="profileUsername">Agent</h2>
-      <p id="profileEmail" class="profile-email"></p>
-    </div>
-    <button id="logoutBtn" class="logout-btn" type="button">
-      Log Out
-    </button>
-  </section>
+    <!-- CHAT -->
+    <section id="chatPanel" class="panel" hidden>
+      <div class="profile-row">
+        <div>
+          <h2 id="profileUsername">User</h2>
+          <p id="profileEmail"></p>
+        </div>
+        <button id="logoutBtn" class="secondary" type="button">Logout</button>
+      </div>
 
-  <main id="messages" aria-live="polite">
-    <div class="welcome">
-      <div class="welcome-icon">✦</div>
-      <h2>Welcome, Agent!</h2>
-      <p>Sign in to connect to the network.</p>
-    </div>
+      <p class="chat-label">GLOBAL CHAT</p>
+      <div id="messages" class="messages">
+        <p class="empty-message">Loading messages...</p>
+      </div>
+
+      <form id="chatForm" class="chat-form">
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Write a message..."
+          maxlength="500"
+          autocomplete="off"
+          required
+        >
+        <button id="sendBtn" type="submit">SEND</button>
+      </form>
+      <p id="chatError" class="error" role="alert"></p>
+    </section>
+
+    <footer>J.A.R.V.I.S. CONNECT © 2026
+    BY HUSSAIN</footer>
   </main>
 
-  <form id="chatForm" hidden>
-    <input id="messageInput" type="text"
-      placeholder="Type your message..."
-      maxlength="500" autocomplete="off" required>
-    <button id="sendBtn" type="submit" disabled>➤</button>
-  </form>
-
-  <footer>J.A.R.V.I.S. CONNECT © 2026
-By Hussain</footer>
-</div>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
