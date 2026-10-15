@@ -1,5 +1,5 @@
 const firebaseConfig = {
-  YOUR_FIREDATEBASE_PROJECT_DETAILS_WHICH_ARE_BELOW_TO_YOUR_PROJRCT
+  Project_Details
 
 const $ = id => document.getElementById(id);
 
@@ -455,6 +455,9 @@ setMode("login");
 startApp();
 // ===== J.A.R.V.I.S. PIN LOCK =====
 
+
+/* ===== J.A.R.V.I.S. SECURE ACCESS ===== */
+
 const ACCESS_PIN = "GHHMC";
 
 const lockScreen = document.getElementById("lockScreen");
@@ -463,6 +466,8 @@ const pinForm = document.getElementById("pinForm");
 const pinInput = document.getElementById("pinInput");
 const pinError = document.getElementById("pinError");
 
+let appStarted = false;
+
 function lockWebsite() {
   appContent.hidden = true;
   lockScreen.hidden = false;
@@ -470,34 +475,26 @@ function lockWebsite() {
   pinError.textContent = "";
 }
 
-pinForm.addEventListener("submit", function (event) {
+pinForm.addEventListener("submit", async function (event) {
   event.preventDefault();
 
-  if (pinInput.value === ACCESS_PIN) {
-    lockScreen.hidden = true;
-    appContent.hidden = false;
-    pinError.textContent = "";
-
-    // Agar tumhare Firebase code mein startApp() function hai,
-    // to Firebase ko PIN unlock hone ke baad start karne ke liye
-    // neeche wali line use kar sakti ho.
-    if (typeof startApp === "function" && !window.jarvisAppStarted) {
-      window.jarvisAppStarted = true;
-      startApp();
-    }
-  } else {
-    pinError.textContent = "Incorrect PIN. Try again.";
+  if (pinInput.value.trim() !== ACCESS_PIN) {
+    pinError.textContent = "Incorrect access PIN. Please try again.";
     pinInput.value = "";
     pinInput.focus();
+    return;
+  }
+
+  pinError.textContent = "";
+  lockScreen.hidden = true;
+  appContent.hidden = false;
+
+  if (!appStarted) {
+    appStarted = true;
+    await startApp();
   }
 });
 
-// Website load hote hi PIN screen show karo.
-lockWebsite();
-// ===== INITIAL SETUP =====
-
+/* Initial screen */
 setMode("login");
-
-// Start with the PIN screen.
-// Firebase will start only after the correct PIN is entered.
 lockWebsite();
