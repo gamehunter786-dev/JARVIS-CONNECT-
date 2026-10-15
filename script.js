@@ -1,13 +1,7 @@
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD25rG6WGZpYyiuT24ycHIcUCCepemvnPI",
-  authDomain: "jarvis-connect-816ce.firebaseapp.com",
-  databaseURL: "https://jarvis-connect-816ce-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jarvis-connect-816ce",
-  storageBucket: "jarvis-connect-816ce.firebasestorage.app",
-  messagingSenderId: "336780686395",
-  appId: "1:336780686395:web:65674db992e749a4e1181e"
-};
+Your_FirDataBase_Project_Details_Availiable_On_Down_To_Your_Project_In_FireDatBase
+  }
 
 const $ = id => document.getElementById(id);
 
