@@ -1,13 +1,11 @@
-
 const firebaseConfig = {
-Your_FirDataBase_Project_Details_Availiable_On_Down_To_Your_Project_In_FireDatBase
-  }
+  YOUR_FIREDATEBASE_PROJECT_DETAILS_WHICH_ARE_BELOW_TO_YOUR_PROJRCT
 
 const $ = id => document.getElementById(id);
 
 const statusText = $("status");
 const authPanel = $("authPanel");
-const profilePanel = $("profilePanel");
+const profilePanel = $("chatPanel");
 const authForm = $("authForm");
 const authTitle = $("authTitle");
 const authSubtitle = $("authSubtitle");
@@ -41,36 +39,11 @@ let stopMessages = null;
 let sessionVersion = 0;
 
 function explainError(error) {
-  const messages = {
-    "auth/email-already-in-use":
-      "This email is already registered. Please log in.",
-    "auth/invalid-email":
-      "Enter a valid email address.",
-    "auth/weak-password":
-      "Your password must contain at least 6 characters.",
-    "auth/invalid-credential":
-      "Incorrect email or password.",
-    "auth/user-not-found":
-      "Account not found. Please register first.",
-    "auth/wrong-password":
-      "Incorrect email or password.",
-    "auth/too-many-requests":
-      "Too many attempts. Try again later.",
-    "auth/network-request-failed":
-      "Network error. Check your internet connection.",
-    "auth/operation-not-allowed":
-      "Enable Email/Password in Firebase Authentication.",
-    "auth/unauthorized-domain":
-      "Add your CodePen preview domain to Firebase Authorized Domains.",
-    "auth/internal-error":
-      "Firebase Authentication failed in this preview. Check Console and Authorized Domains.",
-    "PERMISSION_DENIED":
-      "Database access denied. Check your Firebase Realtime Database Rules."
-  };
+  console.error("JARVIS Firebase Error:", error);
 
-  return messages[error.code] ||
-    error.message ||
-    "An unexpected error occurred.";
+  return `Error code: ${error.code || "unknown"} — ${
+    error.message || "Unknown error"
+  }`;
 }
 
 function setMode(nextMode) {
@@ -480,3 +453,51 @@ async function startApp() {
 
 setMode("login");
 startApp();
+// ===== J.A.R.V.I.S. PIN LOCK =====
+
+const ACCESS_PIN = "GHHMC";
+
+const lockScreen = document.getElementById("lockScreen");
+const appContent = document.getElementById("appContent");
+const pinForm = document.getElementById("pinForm");
+const pinInput = document.getElementById("pinInput");
+const pinError = document.getElementById("pinError");
+
+function lockWebsite() {
+  appContent.hidden = true;
+  lockScreen.hidden = false;
+  pinInput.value = "";
+  pinError.textContent = "";
+}
+
+pinForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  if (pinInput.value === ACCESS_PIN) {
+    lockScreen.hidden = true;
+    appContent.hidden = false;
+    pinError.textContent = "";
+
+    // Agar tumhare Firebase code mein startApp() function hai,
+    // to Firebase ko PIN unlock hone ke baad start karne ke liye
+    // neeche wali line use kar sakti ho.
+    if (typeof startApp === "function" && !window.jarvisAppStarted) {
+      window.jarvisAppStarted = true;
+      startApp();
+    }
+  } else {
+    pinError.textContent = "Incorrect PIN. Try again.";
+    pinInput.value = "";
+    pinInput.focus();
+  }
+});
+
+// Website load hote hi PIN screen show karo.
+lockWebsite();
+// ===== INITIAL SETUP =====
+
+setMode("login");
+
+// Start with the PIN screen.
+// Firebase will start only after the correct PIN is entered.
+lockWebsite();
